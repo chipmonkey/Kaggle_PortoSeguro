@@ -21,3 +21,10 @@ test <- read.csv('../input/test.csv')
 ss <- read.csv('../input/sample_submission.csv')
 
 gc() ; Sys.time() - start_time  # And run this at every useful checkpoint afterwards to do garbage collection and track time
+
+#  No nulls or NAs!
+which(is.na(train))
+which(is.null(train))
+which(is.na(test))
+which(is.null(test))
+
