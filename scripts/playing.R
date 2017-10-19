@@ -2,6 +2,7 @@
 # Chip Lynch - Kaggle Porto Seguro Safe Driver Competition
 #
 
+library(reshape2)
 
 options(scipen = 999) # Mostly disable scientific notation in display and file writes
 options(stringsAsFactors=F)   # Disable conversion of strings to factors on read.  Sometimes useful.
@@ -73,4 +74,41 @@ lapply(train, function(x) plot(density(x)))
 lapply(trainNorm, function(x) plot(density(x), col="blue"))
 par(mfrow=c(1,1))
 
-lapply(train, function(x) length(unique(x)))
+sort(unlist(lapply(train, function(x) length(unique(x)))))
+table(train$ps_car_11_cat)
+
+which(lapply(train, function(x) length(unique(x))) == 2 )
+
+
+###  Build some variable information:
+
+# Badnames stores the primary key, the output variable,
+# And any other variables we wish to categorically exclude:
+badNames <- c('id', 'target')
+
+# Determine natural classes:
+classes <- lapply(train, class)
+factorNames <-  names(which(classes == 'factor'))
+integerNames <- names(which(classes == 'integer'))
+numericNames <- names(which(classes == 'numeric'))
+characterNames <- names(which(classes == 'character'))
+dateNames <- names(which(classes == 'Date'))
+
+variantThreshold = 30  # Tweak this usually based on actual data
+
+
+# Pretty
+myCorrelations <- cor(train[,setdiff(names(train), badnames)])
+heatmap(myCorrelations)
+x <- myCorrelations
+x[!upper.tri(myCorrelations, diag=FALSE)] <- NA
+myCorrPairs <- na.omit(melt(x, value.name='correlation'))
+rm(x)
+myCorrPairs[which(abs(myCorrPairs$correlation) > 0.5),]
+plot(density(myCorrPairs$correlation))
+
+myBig <- which(myCorrelations < 1 & myCorrelations > 0.5)
+myBig
+myCorrelations[myBig]
+plot(density(myCorrelations[which(myCorrelations > 0.01)]))
+hist(myCorrelations[which(myCorrelations > 0.01)])
