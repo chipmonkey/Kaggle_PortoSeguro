@@ -1,29 +1,34 @@
 #
 # Chip Lynch - Kaggle Porto Seguro Safe Driver Competition
 #
+  
+# Initial setup and library loading
 
-library(reshape2)
+    library(reshape2)
+    
+    options(scipen = 999) # Mostly disable scientific notation in display and file writes
+    options(stringsAsFactors=F)   # Disable conversion of strings to factors on read.  Sometimes useful.
+    
+    rm(list=ls());  # WARNING!  this is effectively rm -r /*  !  Destroy everything!  Use with care!
+    
+    gc() ; Sys.time() ; start_time <- Sys.time()  # Run this at the beginning
+    
+    file_timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")  # Generate a timestamp with 1-second accuracy
+    submission_filename <- paste0('../submission_', file_timestamp, '.csv')  # Create a timestamp filename
+    
+    if(file.exists('./scripts')) {
+      setwd('./scripts/')
+    } else if(file.exists('C:/Kaggle/Kaggle Porto Seguro Safe Driver/scripts')) {
+      setwd("C:/Kaggle/Kaggle Porto Seguro Safe Driver/scripts/")
+    }
 
-options(scipen = 999) # Mostly disable scientific notation in display and file writes
-options(stringsAsFactors=F)   # Disable conversion of strings to factors on read.  Sometimes useful.
+# Read the data
+  train <- read.csv('../input/train.csv')
+  test <- read.csv('../input/test.csv')
+  ss <- read.csv('../input/sample_submission.csv')
+  
+  gc() ; Sys.time() - start_time  # And run this at every useful checkpoint afterwards to do garbage collection and track time
 
-rm(list=ls());  # WARNING!  this is effectively rm -r /*  !  Destroy everything!  Use with care!
-
-gc() ; Sys.time() ; start_time <- Sys.time()  # Run this at the beginning
-
-file_timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")  # Generate a timestamp with 1-second accuracy
-submission_filename <- paste0('../submission_', file_timestamp, '.csv')  # Create a timestamp filename
-
-if(file.exists('./scripts/')) {
-  setwd('./scripts/')
-}
-
-
-train <- read.csv('../input/train.csv')
-test <- read.csv('../input/test.csv')
-ss <- read.csv('../input/sample_submission.csv')
-
-gc() ; Sys.time() - start_time  # And run this at every useful checkpoint afterwards to do garbage collection and track time
 
 #  No nulls or NAs!
 which(is.na(train))
@@ -65,14 +70,8 @@ ttNormalize <- function(train, test, badnames) {
 x <- ttNormalize(train,test, c('id', 'target'))
 trainNorm <- x[[1]]
 testNorm <- x[[2]]
+rm(x)
 
-
-summary(train)
-summary(trainNorm)
-par(mfrow=c(3,3))
-lapply(train, function(x) plot(density(x)))
-lapply(trainNorm, function(x) plot(density(x), col="blue"))
-par(mfrow=c(1,1))
 
 sort(unlist(lapply(train, function(x) length(unique(x)))))
 table(train$ps_car_11_cat)
@@ -84,27 +83,37 @@ which(lapply(train, function(x) length(unique(x))) == 2 )
 
 # Badnames stores the primary key, the output variable,
 # And any other variables we wish to categorically exclude:
-badNames <- c('id', 'target')
+  badNames <- c('id', 'target')
 
 # Determine natural classes:
-classes <- lapply(train, class)
-factorNames <-  names(which(classes == 'factor'))
-integerNames <- names(which(classes == 'integer'))
-numericNames <- names(which(classes == 'numeric'))
-characterNames <- names(which(classes == 'character'))
-dateNames <- names(which(classes == 'Date'))
+  classes <- lapply(train, class)
+  factorNames <-  names(which(classes == 'factor'))
+  integerNames <- names(which(classes == 'integer'))
+  numericNames <- names(which(classes == 'numeric'))
+  characterNames <- names(which(classes == 'character'))
+  dateNames <- names(which(classes == 'Date'))
+  
+  variantThreshold = 30  # Tweak this usually based on actual data
+  myCorrelations <- cor(train[,setdiff(names(train), badNames)])
+    x <- myCorrelations
+    x[!upper.tri(myCorrelations, diag=FALSE)] <- NA
+  myCorrPairs <- na.omit(melt(x, value.name='correlation'))
+    rm(x)
+  myCorrPairs[which(abs(myCorrPairs$correlation) > 0.5),]
 
-variantThreshold = 30  # Tweak this usually based on actual data
-
-
+stop('unstop me to run the pretty')
 # Pretty
-myCorrelations <- cor(train[,setdiff(names(train), badnames)])
+
+summary(train)
+summary(trainNorm)
+par(mfrow=c(3,3))
+lapply(train, function(x) plot(density(x)))
+lapply(trainNorm, function(x) plot(density(x), col="blue"))
+par(mfrow=c(1,1))
+
+
+
 heatmap(myCorrelations)
-x <- myCorrelations
-x[!upper.tri(myCorrelations, diag=FALSE)] <- NA
-myCorrPairs <- na.omit(melt(x, value.name='correlation'))
-rm(x)
-myCorrPairs[which(abs(myCorrPairs$correlation) > 0.5),]
 plot(density(myCorrPairs$correlation))
 
 myBig <- which(myCorrelations < 1 & myCorrelations > 0.5)
