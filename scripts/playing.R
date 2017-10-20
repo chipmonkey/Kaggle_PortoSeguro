@@ -76,7 +76,7 @@ rm(x)
 sort(unlist(lapply(train, function(x) length(unique(x)))))
 table(train$ps_car_11_cat)
 
-which(lapply(train, function(x) length(unique(x))) == 2 )
+
 
 
 ###  Build some variable information:
@@ -92,6 +92,7 @@ which(lapply(train, function(x) length(unique(x))) == 2 )
   numericNames <- names(which(classes == 'numeric'))
   characterNames <- names(which(classes == 'character'))
   dateNames <- names(which(classes == 'Date'))
+  binaryNames <- setdiff(names(which(lapply(train, function(x) length(unique(x))) == 2 )), badNames)
   
   variantThreshold = 30  # Tweak this usually based on actual data
   myCorrelations <- cor(train[,setdiff(names(train), badNames)])
